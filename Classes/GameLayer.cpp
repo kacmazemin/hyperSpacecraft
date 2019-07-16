@@ -31,9 +31,10 @@ bool GameLayer::init() {
     this->addChild(bgImage);
 
 
-    score=Label::createWithTTF("Score","fonts/arial.ttf",10);
-    score->setPosition(Vec2(winSize.width-score->getContentSize().width,winSize.height-score->getContentSize().height));
-    this->addChild(score);
+    scoreLabel = Label::createWithTTF("Score", "fonts/arial.ttf", 10);
+    scoreLabel->setPosition(Vec2(winSize.width - scoreLabel->getContentSize().width,
+                                 winSize.height - scoreLabel->getContentSize().height));
+    this->addChild(scoreLabel);
 
 
     //player init start
@@ -72,58 +73,12 @@ bool GameLayer::TouchBegan(Touch *touch, Event *event) {
 
 void GameLayer::update(float delta) {
 
-    for (EnemyShip *enemyShipRef : enemyShipPool) {//detect if enemyship and player collide
 
-        if (enemyShipRef->IsAttacking() &&  //check if ship is onScene
-            checkBoxCollision(mySpaceCraft, enemyShipRef)) {
-            Director::getInstance()->replaceScene(TransitionFlipY::create(1.0f,MainMenu::createScene()));
-        }
-    }
+    playerAttack(delta, projectilePool, mySpaceCraft);
+    enemyAttack(delta, enemyShipPool);
 
-    for (Projectile *myProjectile: projectilePool) { // detect if projectiles and enemyship collide
-        for (EnemyShip *enemyShipRef : enemyShipPool) {
-            if (enemyShipRef->IsAttacking() && checkBoxCollision(myProjectile, enemyShipRef)) {
-                enemyShipRef->hideAndStop();
-                CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("audio/exploison.wav");
-                scoreCount++;
-                score->setString(std::to_string(scoreCount));
-
-
-            }
-        }
-
-    }
-    projectileTimer += delta;
-    if (projectileTimer > 0.5f) {
-        auto nextProjectile = projectilePool.at(projectileIndex);
-        nextProjectile->shoot(mySpaceCraft->getPosition());
-        projectileTimer = 0;
-
-        projectileIndex += 1;
-
-        if (projectileIndex >= iProjectileCount) {
-            projectileIndex = 0;
-        }
-
-
-    }
-
-    enemyShipTimer += delta;
-    if (enemyShipTimer > 5) {
-        enemyShipTimer = 0;
-
-        for (int i = 1; i < 8; ++i) {
-            auto nextEnemyShip = enemyShipPool.at(enemyShipIndex);
-            auto mySize = enemyShip->getContentSize().width;
-            nextEnemyShip->attack(
-                    Vec2(mySize * i + 15, winSize.height - enemyShip->getContentSize().height));
-            enemyShipIndex += 1;
-            if (enemyShipIndex >= iEnemyCount) {
-                enemyShipIndex = 0;
-            }
-
-        }
-    }
+    collideEnemyAndPlayer(mySpaceCraft, enemyShipPool);
+    collideProjectileAndEnemy(projectilePool, enemyShipPool);
 }
 
 void GameLayer::moveLeft(Sprite *sprite) {
@@ -172,11 +127,76 @@ void GameLayer::spawmEnemies(int enemyNumber) { // fill enemyShip vector for Obj
 
 }
 
-void GameLayer::spawnProjectiles(int projectileNumber) { // fill projectile vector for Object Pooling
+void
+GameLayer::spawnProjectiles(int projectileNumber) { // fill projectile vector for Object Pooling
     iProjectileCount = projectileNumber;
     for (int i = 0; i < projectileNumber; ++i) {
         projectile = Projectile::create();
         projectilePool.pushBack(projectile);
         this->addChild(projectile);
     }
+}
+
+void GameLayer::collideEnemyAndPlayer(Sprite *player, Vector<EnemyShip *> enemyShipPool) {
+    for (EnemyShip *enemyShipRef : enemyShipPool) {//detect if enemyship and player collide
+
+        if (enemyShipRef->IsAttacking() &&  //check if ship is onScene
+            checkBoxCollision(player, enemyShipRef)) {
+            Director::getInstance()->replaceScene(
+                    TransitionFlipY::create(1.0f, MainMenu::createScene()));
+        }
+    }
+}
+
+void GameLayer::collideProjectileAndEnemy(Vector<Projectile *> projectilePool,
+                                          Vector<EnemyShip *> enemyShipPool) {
+    for (Projectile *myProjectile: projectilePool) { // detect if projectiles and enemyship collide
+        for (EnemyShip *enemyShipRef : enemyShipPool) {
+            if (enemyShipRef->IsAttacking() && checkBoxCollision(myProjectile, enemyShipRef)) {
+                enemyShipRef->hideAndStop();
+                CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("audio/exploison.wav");
+                scoreCount++;
+                scoreLabel->setString(std::to_string(scoreCount));
+            }
+        }
+    }
+
+
+}
+
+void GameLayer::playerAttack(float delta, Vector<Projectile *> projectilePool, Sprite *player) {
+
+    projectileTimer += delta;
+    if (projectileTimer > 0.5f) {
+        auto nextProjectile = projectilePool.at(projectileIndex);
+        nextProjectile->shoot(player->getPosition());
+        projectileTimer = 0;
+
+        projectileIndex += 1;
+
+        if (projectileIndex >= iProjectileCount) {
+            projectileIndex = 0;
+        }
+    }
+}
+
+void GameLayer::enemyAttack(float delta, Vector<EnemyShip *> enemyShipPool) {
+
+
+    enemyShipTimer += delta;
+    if (enemyShipTimer > 5) {
+        enemyShipTimer = 0;
+
+        for (int i = 1; i < 8; ++i) {
+            auto nextEnemyShip = enemyShipPool.at(enemyShipIndex);
+            auto mySize = enemyShip->getContentSize().width;
+            nextEnemyShip->attack(
+                    Vec2(mySize * i + 15, winSize.height - enemyShip->getContentSize().height));
+            enemyShipIndex += 1;
+            if (enemyShipIndex >= iEnemyCount) {
+                enemyShipIndex = 0;
+            }
+        }
+    }
+
 }

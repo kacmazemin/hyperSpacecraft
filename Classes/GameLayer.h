@@ -22,7 +22,6 @@ public:
     // a selector callback
     void menuCloseCallback(cocos2d::Ref *pSender);
 
-
     void update(float dT);
     // implement the "static create()" method manually
     CREATE_FUNC(GameLayer);
@@ -32,7 +31,7 @@ public:
 
     Vector<EnemyShip *> enemyShipPool;
     Vector<Projectile *> projectilePool;
-    Label *score;
+    Label *scoreLabel;
 
     int enemyShipIndex = 0;
     float enemyShipTimer;
@@ -40,7 +39,10 @@ public:
     int projectileIndex = 0;
     float projectileTimer;
 
-
+    void collideEnemyAndPlayer(Sprite * player,Vector<EnemyShip*> enemyShip);
+    void collideProjectileAndEnemy(Vector<Projectile*> projectilePool,Vector<EnemyShip*> enemyShipPool);
+    void playerAttack(float delta,Vector<Projectile*> projectilePool,Sprite* player);
+    void enemyAttack(float delta,Vector<EnemyShip*> enemyShipPool);
 
 
 private:
